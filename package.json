@@ -1,8 +1,8 @@
 {
   "name": "react-snapshot-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A zero-configuration server that serves server-rendered snapshots of Create React App",
-  "main": "index.js",
+  "main": "lib/index.js",
   "repository": "https://github.com/scrnhq/react-snapshot-server",
   "author": "Robert van Steen",
   "license": "MIT",
