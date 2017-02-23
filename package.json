@@ -1,6 +1,6 @@
 {
   "name": "react-snapshot-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A zero-configuration server that serves server-rendered snapshots of Create React App",
   "main": "index.js",
   "repository": "https://github.com/scrnhq/react-snapshot-server",
@@ -10,7 +10,7 @@
     "react-snapshot-server": "./bin/cli.js"
   },
   "scripts": {
-    "start": "micro server"
+    "compile": "async-to-gen --out-dir lib/ src/"
   },
   "eslintConfig": {
     "extends": "react-app"

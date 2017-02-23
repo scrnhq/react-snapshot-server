@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-require('async-to-gen/register');
-
 const micro = require('micro');
 
-const flags = require('../flags');
-const snapshotServer = require('../server');
+const flags = require('../lib/flags');
+const snapshotServer = require('../lib/server');
 
 const server = micro(snapshotServer);
 server.listen(flags.port);
