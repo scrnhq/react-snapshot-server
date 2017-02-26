@@ -2,6 +2,13 @@
 
 📸 A zero-configuration server that serves server-rendered snapshots of Create React App
 
+## About
+React Snapshot Server is a server based on [zeit/micro](https://github.com/zeit/micro) that creates
+snapshots from your [Create React Apps](https://github.com/facebookincubator/create-react-app) on the fly.
+This is done by running the application on the server in jsdom and saving the HTML in a snapshot.
+The snapshot is then saved and is valid for a given period of time, after that if the page is requested
+again a new snapshot will be generated.
+
 ## Starting the server
 
 You can start the server by running `node node_modules/react-snapshot-server/bin/cli.js`.
@@ -27,13 +34,12 @@ Commands:
 
 Options:
 
-  -h, --help                   Output usage information
-  -p, --port <n>               The port on which the server will be running (defaults to 3000)
-  -s, --snapshot_duration <n>  Time in minutes that a snapshot is valid (defaults to 10)
-  -v, --version                Output the version number
+  -P, --path [value]  The path to the build directory (defaults to "build")
+  -p, --port <n>      The port on which the server will be running (defaults to 3000)
+  -v, --validity      Time in minutes that a snapshot is valid (defaults to 10)
 ```
 
-### Installing
+## Installing
 
 Install React Snapshot Server by running `yarn add react-snapshot-server -D`
 
@@ -55,11 +61,11 @@ and that's it, you now have server side rendering!
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/scrnhq/react-snapshot-server/tags).
 
 ## Authors
 
-* **Robert van Steen** - *Initial work* - [Rovansteen](https://github.com/rovansteen)
+* [Robert van Steen](https://github.com/rovansteen)
 
 See also the list of [contributors](https://github.com/scrnhq/react-snapshot-server/contributors) who participated in this project.
 
