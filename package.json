@@ -11,8 +11,9 @@
   },
   "scripts": {
     "compile": "babel src -d lib",
-    "test": "jest --forceExit",
-    "test:watch": "jest --watch"
+    "test": "jest --coverage --forceExit",
+    "test:watch": "jest --watch",
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -35,6 +36,7 @@
     "babel-jest": "^19.0.0",
     "babel-polyfill": "^6.23.0",
     "babel-preset-stage-3": "^6.22.0",
+    "coveralls": "^2.11.16",
     "eslint": "^3.8.1",
     "eslint-config-react-app": "^0.5.1",
     "eslint-plugin-flowtype": "^2.21.0",
