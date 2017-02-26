@@ -1,165 +1,76 @@
-const __dir = process.cwd();
 const path = require('path');
-const stream = require('send');
-const React = require('react');
-const jsdom = require('jsdom');
-const fs = require('fs-promise');
-const makePath = require('mkpath');
-const { renderToString } = require('react-dom/server');
 
-const flags = require('./flags');
-const manifest = require('./manifest');
-
-const SNAPSHOT_DURATION = calculateDuration(flags.snapshotDuration);
-const ENTRY_POINT = path.join(__dir, 'build', 'index.html');
-const SNAPSHOT_DIR = path.join(__dir, 'build', 'snapshots');
-
-makePath(SNAPSHOT_DIR);
-
-/**
- * Calculate duration from minutes to microseconds.
- *
- * @param  {Number} duration
- * @return {Number}
- */
-function calculateDuration(duration) {
-  return 1000 * 60 * Number(duration);
+const Snapshot = function(manifest, fs, browser, snapshotDirectory, applicationPath, validity) {
+  this.fs = fs;
+  this.browser = browser;
+  this.validity = validity;
+  this.manifest = manifest;
+  this.applicationPath = applicationPath;
+  this.snapshotDirectory = snapshotDirectory;
 }
 
-/**
- * Returns if the pathname has a snapshot.
- *
- * @param  {String} url
- * @return {Boolean}
- */
-function exists(pathname) {
-  const snapshotPath = getPath(pathname);
-  return manifest.exists(snapshotPath);
-}
-
-/**
- * Returns if the pathname has a valid snapshot.
- *
- * If the SNAPSHOT_DURATION is set to 0, always return true.
- *
- * @param  {String} url
- * @return {Boolean}
- */
-function valid(pathname) {
-  if (SNAPSHOT_DURATION === 0) {
-    return true;
-  }
-
-  const snapshotPath = getPath(pathname);
-  return manifest.valid(snapshotPath);
-}
-
-/**
- * Get the path of a snapshot based on the request pathname.
- *
- * @param  {String} pathname
- * @return {String}
- */
-function getPath(pathname) {
+Snapshot.prototype.getPath = function(pathname) {
   const filename = path.basename(pathname) === ''
     ? `${pathname}index.snapshot`
     : `${pathname}.snapshot`;
 
-  return path.join(SNAPSHOT_DIR, filename);
+  return path.join(this.snapshotDirectory, filename);
 }
 
-/**
- * Pipe the conents of a snapshot to the response.
- *
- * @param  {Request} req
- * @param  {Response} res
- * @param  {String} pathname
- * @return {Stream}
- */
-function send(req, res, pathname) {
-  const snapshotPath = getPath(pathname);
-  res.setHeader('Content-Type', 'text/html');
-  return stream(req, snapshotPath).pipe(res);
+Snapshot.prototype.exists = function(pathname) {
+  const snapshotPath = this.getPath(pathname);
+  return this.manifest.exists(snapshotPath);
 }
 
-/**
- * Create a new snapshot for a pathname.
- *
- * @param  {String}  pathname
- * @return {Promise}
- */
-async function create(pathname) {
-  const html = await fs.readFile(ENTRY_POINT);
+Snapshot.prototype.isValid = function(pathname) {
+  if (this.validity === 0) {
+    return true;
+  }
 
-  return new Promise(resolve => {
-    jsdom.env({
-      html,
-      features: {
-        FetchExternalResources: ['script'],
-        ProcessExternalResources: ['script'],
-        SkipExternalResources: false,
-      },
-      async resourceLoader(resource, callback) {
-        const resourcePathname = resource.url.pathname;
-        const content = await fs.readFile(`./build/${resourcePathname}`, 'utf-8');
-        callback(null, content);
-      },
-      virtualConsole: jsdom.createVirtualConsole().sendTo(console),
-      created: (err, window) => {
-        jsdom.changeURL(window, 'http://' + pathname);
-      },
-      done: async (err, window) => {
-        const app = window.app;
-
-        let initialProps;
-
-        if (typeof app.getInitialProps === 'function') {
-          initialProps = await app.getInitialProps();
-        } else {
-          initialProps = {};
-        }
-
-        const content = renderToString(
-          React.createElement(app, initialProps)
-        );
-
-        window.document.getElementById('root').innerHTML = content;
-
-        if (initialProps) {
-          const script = window.document.createElement('script');
-          const stringifiedProps = JSON.stringify(initialProps);
-          script.text = `window.__INITIAL_PROPS__ = ${stringifiedProps}`;
-          const firstScript = window.document.body.getElementsByTagName('script')[0];
-          window.document.body.insertBefore(script, firstScript);
-        }
-
-        resolve(window.document.documentElement.outerHTML);
-      },
-    });
-  });
+  const snapshotPath = this.getPath(pathname);
+  return this.manifest.isValid(snapshotPath);
 }
 
-/**
- * Save a snapshot.
- *
- * @param  {String}  pathname
- * @param  {String}  contents
- * @return {Promise}
- */
-async function save(pathname, contents) {
-  const snapshotPath = getPath(pathname);
-  const expirationDate = Date.now() + SNAPSHOT_DURATION;
-  manifest.add(snapshotPath, expirationDate);
-  makePath.sync(path.dirname(snapshotPath));
-
-  return fs.writeFile(snapshotPath, contents);
+Snapshot.prototype.getApplication = function() {
+  try {
+    return this.fs.readFileSync(this.applicationPath);
+  } catch (error) {
+    console.error(error);
+    throw new Error(`
+      Could not find a build index.html, please run 'yarn build'
+      before running create-snapshot-server.
+    `);
+  }
 }
 
-module.exports = {
-  save,
-  send,
-  valid,
-  create,
-  exists,
-  getPath,
-};
+Snapshot.prototype.create = async function(pathname) {
+  const html = this.getApplication();
+  const browser = new this.browser(pathname, html);
+  return await browser.execute();
+}
+
+Snapshot.prototype.getPath = function(pathname) {
+  const filename = path.basename(pathname) === ''
+  ? `${pathname}index.snapshot`
+  : `${pathname}.snapshot`;
+
+  return path.join(this.snapshotDirectory, filename);
+}
+
+Snapshot.prototype.save = function(pathname, contents) {
+  const snapshotPath = this.getPath(pathname);
+
+  const dirname = path.dirname(snapshotPath)
+
+  if (!this.fs.existsSync(dirname)) {
+    this.fs.mkdirSync(dirname);
+  }
+
+  this.manifest.add(snapshotPath);
+
+  return this.fs
+    .writeFile(snapshotPath, contents)
+    .catch(error => console.error(error));
+}
+
+module.exports = Snapshot;

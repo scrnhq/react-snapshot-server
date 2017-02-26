@@ -1,45 +1,44 @@
-const __dir = process.cwd();
 const path = require('path');
-const fs = require('fs-promise');
-const makePath = require('mkpath');
-const jsonfile = require('jsonfile');
 
-const MANIFEST_DIR = path.join(__dir, 'build', 'snapshots');
-const MANIFEST_PATH = path.join(MANIFEST_DIR, 'manifest.json')
+const Manifest = function(fs, date, manifestPath, validity) {
+  this.fs = fs;
+  this.date = date;
+  this.manifestPath = manifestPath;
+  this.validity = validity;
+  this.manifest = this.open(manifestPath);
+}
 
-makePath.sync(MANIFEST_DIR);
-
-const manifest = boot();
-
-/**
- * Boot the manifest, create if necessary, and return the contents.
- *
- * @return {Object}
- */
-function boot() {
-  if (fs.existsSync(MANIFEST_PATH)) {
-    return jsonfile.readFileSync(MANIFEST_PATH);
+Manifest.prototype.open = function() {
+  if (this.fs.existsSync(this.manifestPath)) {
+    return JSON.parse(this.fs.readFileSync(this.manifestPath));
   }
 
-  jsonfile.writeFile(MANIFEST_PATH, {}, function (err) {
-    if (err) { console.error(err) }
-  });
-
+  this.write({});
   return {};
 }
 
+Manifest.prototype.write = function(manifest) {
+  const dirname = path.dirname(this.manifestPath)
+
+  if (!this.fs.existsSync(dirname)) {
+    this.fs.mkdirSync(dirname);
+  }
+
+  const manifestToWrite = JSON.stringify(manifest);
+  this.fs.writeFile(this.manifestPath, manifestToWrite)
+    .catch(error => console.error(error));
+}
+
 /**
- * Add a snapshot to the manifest.
+ * Add an entry to the manifest.
  *
  * @param {String} path
  * @param {Number} expirationDate
  */
-function add(path, expirationDate) {
-  manifest[path] = expirationDate;
+Manifest.prototype.add = function(path) {
+  this.manifest[path] = this.calculateValidity();
 
-  jsonfile.writeFile(MANIFEST_PATH, manifest, function (err) {
-    if (err) { console.error(err) }
-  });
+  this.write(this.manifest);
 }
 
 /**
@@ -48,8 +47,8 @@ function add(path, expirationDate) {
  * @param  {String} path
  * @return {Boolean}
  */
-function exists(path) {
-  return (path in manifest);
+Manifest.prototype.exists = function(path) {
+  return (path in this.manifest);
 }
 
 /**
@@ -59,18 +58,18 @@ function exists(path) {
  * @param  {String} path
  * @return {Boolean}
  */
-function valid(path) {
-  if (!exists(path)) {
+Manifest.prototype.isValid = function(path) {
+  if (!this.exists(path)) {
     return false;
   }
 
-  const expirationDate = manifest[path];
+  const expirationDate = this.manifest[path];
 
-  return Date.now() < expirationDate;
+  return this.date.now() < expirationDate;
 }
 
-module.exports = {
-  add,
-  valid,
-  exists,
+Manifest.prototype.calculateValidity = function(validity) {
+  return this.date.now() + (this.validity * 60 * 1000);
 }
+
+module.exports = Manifest;

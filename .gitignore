@@ -6,3 +6,6 @@ lib
 
 # Logs
 npm-debug.log
+
+# Internal
+coverage
