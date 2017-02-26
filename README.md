@@ -1,4 +1,4 @@
-# React Snapshot Server
+# React Snapshot Server [![Build Status](https://travis-ci.org/scrnhq/react-snapshot-server.svg?branch=master)](https://travis-ci.org/scrnhq/react-snapshot-server) [![Coverage Status](https://coveralls.io/repos/github/scrnhq/react-snapshot-server/badge.svg?branch=master)](https://coveralls.io/github/scrnhq/react-snapshot-server?branch=master)
 
 📸 A zero-configuration server that serves server-rendered snapshots of Create React App
 
@@ -70,6 +70,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## Acknowledgments
 
 * [next.js](https://github.com/zeit/next.js) for server rendering inspiration.
-* [micro](https://github.com/zeit/micro) for awesome async http microservice 
+* [micro](https://github.com/zeit/micro) for awesome async http microservice
 * [react-snapshot](https://github.com/geelen/react-snapshot) for the idea of snapshotting as server rendering.
 * [create-react-app](https://github.com/facebookincubator/create-react-app) for a react app up and running in seconds.
