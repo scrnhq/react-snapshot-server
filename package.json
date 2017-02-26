@@ -6,6 +6,9 @@
   "repository": "https://github.com/scrnhq/react-snapshot-server",
   "author": "Robert van Steen",
   "license": "MIT",
+  "engines": {
+    "node": ">=6"
+  },
   "bin": {
     "react-snapshot-server": "./bin/cli.js"
   },
